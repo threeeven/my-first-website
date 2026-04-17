@@ -1,0 +1,7 @@
+name = "my-diary-app"
+pages_build_output_dir = "./"
+
+[[d1_databases]]
+binding = "diary_db"
+database_name = "diary-db"
+database_id = "73bbd662-fbec-4231-9f9c-73ec52d50da8"
