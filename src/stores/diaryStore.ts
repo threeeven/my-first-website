@@ -1,3 +1,4 @@
+// src/stores/diaryStore.ts
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Diary } from '@/types/diary';

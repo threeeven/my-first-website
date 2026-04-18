@@ -20,6 +20,7 @@ export const onRequest: PagesFunction = async (context) => {
   }
 
   try {
+
     // ---------- GET /api/diaries ----------
     if (method === 'GET' && url.pathname === '/api/diaries') {
       const search = url.searchParams.get('search') || '';
@@ -103,25 +104,7 @@ export const onRequest: PagesFunction = async (context) => {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    // ---------- POST /api/upload ---------- 图片上传
-    if (method === 'POST' && url.pathname === '/api/upload') {
-      const formData = await request.formData();
-      const file = formData.get('file') as File;
-      if (!file) {
-        return Response.json({ error: 'No file' }, { status: 400, headers: corsHeaders });
-      }
 
-      // 上传到 Supabase Storage (需要预先创建 bucket 'diary-images')
-      const fileName = `${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from('diary-images')
-        .upload(fileName, file, { contentType: file.type });
-      if (error) throw error;
-
-      // 获取公开 URL
-      const { data: urlData } = supabase.storage.from('diary-images').getPublicUrl(fileName);
-      return Response.json({ url: urlData.publicUrl }, { headers: corsHeaders });
-    }
 
     // 未匹配任何路由
     return new Response('Not Found', { status: 404, headers: corsHeaders });

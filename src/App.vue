@@ -18,22 +18,8 @@ function handleEditDiary(diary: Diary) {
 }
 
 function refreshList() {
-  // 列表会自动通过 store 刷新，但需要触发 store.loadDiaries
-  // 可以在 store.saveDiary 内部已经调用了 loadDiaries，所以这里不需要额外动作
+  // 可选：如果需要额外刷新逻辑可以添加
 }
 </script>
 
-<style>
-/* 全局样式，或者导入外部 CSS */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-  padding: 20px;
-}
-.editor-panel { flex: 1; min-width: 300px; }
-.list-panel { flex: 2; }
-/* 其他样式 ... */
-</style>
+<!-- 样式已移至 main.css，此处不再需要 -->
