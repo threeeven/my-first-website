@@ -1,47 +1,39 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <div class="container">
+    <DiaryEditor ref="editorRef" @saved="refreshList" />
+    <DiaryList @edit="handleEditDiary" />
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
+<script setup lang="ts">
+import { ref } from 'vue';
+import DiaryEditor from './components/DiaryEditor.vue';
+import DiaryList from './components/DiaryList.vue';
+import type { Diary } from './types/diary';
+
+const editorRef = ref<InstanceType<typeof DiaryEditor> | null>(null);
+
+function handleEditDiary(diary: Diary) {
+  editorRef.value?.setEditMode(diary);
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+function refreshList() {
+  // 列表会自动通过 store 刷新，但需要触发 store.loadDiaries
+  // 可以在 store.saveDiary 内部已经调用了 loadDiaries，所以这里不需要额外动作
 }
+</script>
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+<style>
+/* 全局样式，或者导入外部 CSS */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 20px;
 }
+.editor-panel { flex: 1; min-width: 300px; }
+.list-panel { flex: 2; }
+/* 其他样式 ... */
 </style>
