@@ -1,5 +1,6 @@
 const API_BASE = '/api/diaries';
 const UPLOAD_URL = '/api/upload';
+import type { Diary, DiaryInput } from '@/types/diary';
 
 export interface FetchParams {
   search?: string;

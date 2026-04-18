@@ -22,6 +22,7 @@ import { computed } from 'vue';
 import { marked } from 'marked';
 import type { Diary } from '@/types/diary';
 import { formatDate } from '@/utils/helpers';
+import type { Diary } from '@/types/diary';
 
 const props = defineProps<{ diary: Diary }>();
 const emit = defineEmits<{ (e: 'edit', id: string): void; (e: 'delete', id: string): void }>();

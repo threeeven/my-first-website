@@ -23,6 +23,7 @@ import { computed } from 'vue';
 import { useDiaryStore } from '@/stores/diaryStore';
 import DiaryCard from './DiaryCard.vue';
 import SearchBar from './SearchBar.vue';
+import type { Diary } from '@/types/diary';
 
 const store = useDiaryStore();
 const emit = defineEmits<{ (e: 'edit', diary: Diary): void }>();
