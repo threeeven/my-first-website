@@ -89,8 +89,8 @@ defineExpose({ filterByDate });
 const groupedDiaries = computed(() => {
   const groups: Record<string, Diary[]> = {};
   for (const d of store.diaries) {
-    const date = new Date(d.created_at);
-    const yearMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
+    const adjustedDate = new Date(new Date(d.created_at).getTime() + 8 * 60 * 60 * 1000);
+    const yearMonth = `${adjustedDate.getUTCFullYear()}-${adjustedDate.getUTCMonth() + 1}`;
     if (!groups[yearMonth]) groups[yearMonth] = [];
     groups[yearMonth].push(d);
   }
