@@ -60,36 +60,32 @@ const totalWords = computed(() => {
 
 // 日均字数（有日记的天数，按日期去重）
 const avgWordsPerDay = computed(() => {
-    if (store.diaries.length === 0) return 0;
-    const uniqueDates = new Set(
-        store.diaries.map(d => d.created_at?.split('T')[0]).filter(Boolean)
-    );
-    const days = uniqueDates.size;
-    return Math.round(totalWords.value / days);
+  if (store.diaries.length === 0) return 0;
+  const uniqueDates = new Set(store.diaries.map(d => d.created_at.split('T')[0]));
+  const days = uniqueDates.size;
+  return Math.round(totalWords.value / days);
 });
 
 // 连续写作天数（按日期排序，检查连续日期）
 const continuousDays = computed(() => {
-    if (store.diaries.length === 0) return 0;
-    const dates = store.diaries
-        .map(d => d.created_at?.split('T')[0])      // 可选链
-        .filter((date): date is string => !!date)  // 过滤 undefined
-        .sort()
-        .reverse();
-    if (dates.length === 0) return 0;
-    let continuous = 1;
-    let prevDate = new Date(dates[0]);
-    for (let i = 1; i < dates.length; i++) {
-        const currDate = new Date(dates[i]);
-        const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) {
-        continuous++;
-        prevDate = currDate;
-        } else {
-        break;
-        }
+  if (store.diaries.length === 0) return 0;
+  const dates = store.diaries
+    .map(d => d.created_at.split('T')[0])
+    .sort()
+    .reverse(); // 从最近开始
+  let continuous = 1;
+  let prevDate = new Date(dates[0]!);
+  for (let i = 1; i < dates.length; i++) {
+    const currDate = new Date(dates[i]!);
+    const diffDays = Math.round((prevDate.getTime() - currDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) {
+      continuous++;
+      prevDate = currDate;
+    } else {
+      break;
     }
-    return continuous;
+  }
+  return continuous;
 });
 
 // 标签统计（Top 5）
@@ -114,8 +110,8 @@ const lastWeekActivity = computed(() => {
   for (let i = 6; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(today.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0];
-    const count = store.diaries.filter(d => d.created_at?.startsWith(dateStr)).length;
+    const dateStr = date.toISOString().split('T')[0]!;
+    const count = store.diaries.filter(d => d.created_at.startsWith(dateStr)).length;
     const maxCount = Math.max(...store.diaries.map(d => 
       store.diaries.filter(dd => dd.created_at.split('T')[0] === d.created_at.split('T')[0]).length
     ), 1);
