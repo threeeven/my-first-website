@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDiaryStore } from '@/stores/diaryStore';
-import Heatmap from './Heatmap.vue';
+import HeatMap from './Heatmap.vue';
 
 const store = useDiaryStore();
 const emit = defineEmits<{ (e: 'dateClick', date: string): void }>();
