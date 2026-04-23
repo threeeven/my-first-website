@@ -100,7 +100,7 @@ function toggleExpand(id: string) {
   expandedIds.value = new Set(expandedIds.value);
 }
 
-// 检测每个日记的内容区域是否溢出（高度超过 300px）
+// 检测每个日记的内容区域是否溢出（高度超过 200px）
 async function checkContentOverflow() {
   // 等待 DOM 渲染完成
   await nextTick();
@@ -110,7 +110,7 @@ async function checkContentOverflow() {
     if (!id) continue;
     const contentWrapper = card.querySelector('.diary-content-wrapper');
     if (contentWrapper) {
-      const isOverflow = contentWrapper.scrollHeight > 300; // 阈值 300px
+      const isOverflow = contentWrapper.scrollHeight > 200; // 阈值 200px
       if (isOverflow !== contentOverflowMap.value[id]) {
         contentOverflowMap.value = {
           ...contentOverflowMap.value,
@@ -133,9 +133,9 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 内容包装器：默认最大高度 300px，溢出隐藏 */
+/* 内容包装器：默认最大高度 200px，溢出隐藏 */
 .diary-content-wrapper {
-  max-height: 300px;
+  max-height: 200px;
   overflow: hidden;
   transition: max-height 0.3s ease;
   position: relative;
