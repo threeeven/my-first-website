@@ -1,7 +1,10 @@
 <template>
   <div class="container">
     <DiaryEditor ref="editorRef" @saved="refreshList" />
-    <DiaryList @edit="handleEditDiary" />
+    <div class="list-panel">
+      <StatsPanel />
+      <DiaryList @edit="handleEditDiary" />
+    </div>
   </div>
 </template>
 
@@ -9,6 +12,7 @@
 import { ref } from 'vue';
 import DiaryEditor from './components/DiaryEditor.vue';
 import DiaryList from './components/DiaryList.vue';
+import StatsPanel from './components/StatsPanel.vue';  // 导入统计组件
 import type { Diary } from './types/diary';
 
 const editorRef = ref<InstanceType<typeof DiaryEditor> | null>(null);
@@ -18,8 +22,6 @@ function handleEditDiary(diary: Diary) {
 }
 
 function refreshList() {
-  // 可选：如果需要额外刷新逻辑可以添加
+  // 列表会自动刷新（因为 store 已更新），统计面板也会自动响应
 }
 </script>
-
-<!-- 样式已移至 main.css，此处不再需要 -->
