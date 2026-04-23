@@ -63,7 +63,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
-import MdEditor from 'md-editor-v3';
+import { MdEditor } from 'md-editor-v3';
 import { useDiaryStore } from '@/stores/diaryStore';
 import { uploadImage } from '@/api/diary';
 import type { Diary } from '@/types/diary';
