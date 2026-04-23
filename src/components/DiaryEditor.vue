@@ -2,16 +2,9 @@
   <div class="editor-panel">
     <h2>{{ isEdit ? '✏️ 编辑日记' : '✍️ 写新日记' }}</h2>
 
-    <!-- 标题输入 -->
-    <input
-      v-model="form.title"
-      type="text"
-      placeholder="标题"
-      @input="updateWordCount"
-    />
+    <input v-model="form.title" type="text" placeholder="标题" @input="updateWordCount" />
     <div class="word-count">{{ titleLength }} / 100</div>
 
-    <!-- Markdown 编辑器 -->
     <MdEditor
       v-model="form.content"
       :onUploadImg="handleEditorImageUpload"
@@ -22,36 +15,44 @@
     />
     <div class="word-count">{{ contentLength }} 字符</div>
 
-    <!-- 标签输入 -->
-    <input
-      v-model="tagsStr"
-      type="text"
-      placeholder="标签，用英文逗号分隔 (如: 生活,工作,旅行)"
-    />
+    <input v-model="tagsStr" type="text" placeholder="标签，用英文逗号分隔 (如: 生活,工作,旅行)" />
 
-    <!-- 公开/私密开关 -->
+    <!-- 公开/私密滑动开关 -->
     <div class="toggle-switch-container">
-    <span class="toggle-label">{{ form.is_public ? '🌍 公开' : '🔒 私密' }}</span>
-    <button
+      <span class="toggle-label">{{ form.is_public ? '🌍 公开' : '🔒 私密' }}</span>
+      <button
         type="button"
         role="switch"
         :aria-checked="form.is_public"
         class="toggle-switch"
         :class="{ 'toggle-switch--checked': form.is_public }"
         @click="form.is_public = !form.is_public"
-    >
+      >
         <span class="toggle-slider"></span>
-    </button>
+      </button>
     </div>
 
-    <!-- 图片上传（独立于编辑器，但编辑器已支持拖拽/粘贴，此按钮可选） -->
+    <!-- 置顶滑动开关 -->
+    <div class="toggle-switch-container">
+      <span class="toggle-label">📌 置顶日记</span>
+      <button
+        type="button"
+        role="switch"
+        :aria-checked="form.pinned"
+        class="toggle-switch"
+        :class="{ 'toggle-switch--checked': form.pinned }"
+        @click="form.pinned = !form.pinned"
+      >
+        <span class="toggle-slider"></span>
+      </button>
+    </div>
+
     <input type="file" @change="handleImageUpload" accept="image/*" />
     <div class="image-preview" v-if="form.image_url">
       <img :src="form.image_url" width="80" />
       <button @click="form.image_url = null">移除</button>
     </div>
 
-    <!-- 操作按钮 -->
     <div style="display: flex; gap: 12px; margin-top: 16px;">
       <button @click="handleSave">💾 保存</button>
       <button @click="resetForm" style="background:#94a3b8;">取消编辑</button>
@@ -62,7 +63,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
-import { MdEditor } from 'md-editor-v3';
+import MdEditor from 'md-editor-v3';
 import { useDiaryStore } from '@/stores/diaryStore';
 import { uploadImage } from '@/api/diary';
 import type { Diary } from '@/types/diary';
@@ -70,22 +71,20 @@ import type { Diary } from '@/types/diary';
 const store = useDiaryStore();
 const emit = defineEmits<{ (e: 'saved'): void }>();
 
-// 编辑状态
 const isEdit = ref(false);
 const editId = ref<string | null>(null);
 const autoSaveTip = ref('');
 let autoSaveTimer: number | null = null;
 
-// 表单数据
 const form = reactive({
   title: '',
   content: '',
   tags: [] as string[],
   is_public: true,
+  pinned: false,
   image_url: null as string | null,
 });
 
-// 标签字符串（用于输入框）
 const tagsStr = computed({
   get: () => form.tags.join(','),
   set: (val: string) => {
@@ -93,14 +92,10 @@ const tagsStr = computed({
   },
 });
 
-// 字数统计
 const titleLength = computed(() => form.title.length);
 const contentLength = computed(() => form.content.length);
-function updateWordCount() {
-  // 仅用于触发计算属性更新，实际不需要额外逻辑
-}
+function updateWordCount() {}
 
-// 自动保存草稿（每30秒）
 function startAutoSave() {
   if (autoSaveTimer) clearInterval(autoSaveTimer);
   autoSaveTimer = window.setInterval(() => {
@@ -109,6 +104,7 @@ function startAutoSave() {
       content: form.content,
       tags: form.tags,
       is_public: form.is_public,
+      pinned: form.pinned,
       image_url: form.image_url,
       updatedAt: new Date().toISOString(),
     };
@@ -125,6 +121,7 @@ function loadDraft() {
     form.content = draft.content || '';
     form.tags = draft.tags || [];
     form.is_public = draft.is_public !== undefined ? draft.is_public : true;
+    form.pinned = draft.pinned || false;
     form.image_url = draft.image_url || null;
     autoSaveTip.value = '已加载上次未提交的草稿';
   }
@@ -135,7 +132,6 @@ function clearDraft() {
   autoSaveTip.value = '';
 }
 
-// 重置表单（取消编辑）
 function resetForm() {
   isEdit.value = false;
   editId.value = null;
@@ -143,11 +139,11 @@ function resetForm() {
   form.content = '';
   form.tags = [];
   form.is_public = true;
+  form.pinned = false;
   form.image_url = null;
   clearDraft();
 }
 
-// 图片上传（独立文件选择）
 async function handleImageUpload(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (!file) return;
@@ -159,7 +155,6 @@ async function handleImageUpload(e: Event) {
   }
 }
 
-// 编辑器内部的图片上传钩子（支持拖拽/粘贴）
 async function handleEditorImageUpload(files: File[], callback: (urls: string[]) => void) {
   try {
     const uploadPromises = files.map(file => uploadImage(file));
@@ -172,7 +167,6 @@ async function handleEditorImageUpload(files: File[], callback: (urls: string[])
   }
 }
 
-// 保存日记
 async function handleSave() {
   if (!form.title.trim() && !form.content.trim()) {
     alert('请至少填写标题或内容');
@@ -183,6 +177,7 @@ async function handleSave() {
     content: form.content.trim(),
     tags: form.tags,
     is_public: form.is_public,
+    pinned: form.pinned,
     image_url: form.image_url,
   };
   await store.saveDiary(payload, editId.value || undefined);
@@ -190,7 +185,6 @@ async function handleSave() {
   emit('saved');
 }
 
-// 外部调用：设置编辑模式
 function setEditMode(diary: Diary) {
   isEdit.value = true;
   editId.value = diary.id;
@@ -198,16 +192,11 @@ function setEditMode(diary: Diary) {
   form.content = diary.content;
   form.tags = diary.tags || [];
   form.is_public = diary.is_public;
+  form.pinned = diary.pinned || false;
   form.image_url = diary.image_url;
 }
 
-// 监听内容变化，自动保存草稿（可选：实时保存，但定时保存已足够）
-watch(
-  () => form.content,
-  () => {
-    // 可以在这里实现更频繁的草稿保存，但为了性能，我们保留定时保存
-  }
-);
+defineExpose({ setEditMode, resetForm });
 
 onMounted(() => {
   startAutoSave();
@@ -217,32 +206,20 @@ onMounted(() => {
 onUnmounted(() => {
   if (autoSaveTimer) clearInterval(autoSaveTimer);
 });
-
-// 暴露方法给父组件
-defineExpose({ setEditMode, resetForm });
 </script>
 
 <style scoped>
-/* 如果需要调整编辑器高度等，可以在这里添加局部样式 */
-.editor-panel {
-  /* 确保编辑器容器样式正常 */
-}
-/* 滑动开关容器 */
 .toggle-switch-container {
   display: flex;
   align-items: center;
+  gap: 8px;
   margin: 16px 0;
-  padding: 0 4px;
-  gap: 10px;
 }
-
 .toggle-label {
   font-size: 0.9rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
-
-/* 开关按钮基础样式 */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -256,13 +233,10 @@ defineExpose({ setEditMode, resetForm });
   padding: 0;
   margin: 0;
 }
-
 .toggle-switch:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent);
 }
-
-/* 滑块 */
 .toggle-slider {
   position: absolute;
   top: 2px;
@@ -274,13 +248,37 @@ defineExpose({ setEditMode, resetForm });
   transition: transform 0.2s;
   box-shadow: var(--shadow-sm);
 }
-
-/* 选中状态 */
 .toggle-switch--checked {
   background-color: var(--accent);
 }
-
 .toggle-switch--checked .toggle-slider {
   transform: translateX(24px);
+}
+.word-count {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: right;
+  margin-top: -0.5rem;
+  margin-bottom: 0.75rem;
+}
+.image-preview {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0;
+  align-items: center;
+}
+.image-preview img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+.auto-save-tip {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 0.75rem;
+  text-align: right;
 }
 </style>

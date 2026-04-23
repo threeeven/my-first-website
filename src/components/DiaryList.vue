@@ -5,15 +5,15 @@
     <div v-else>
       <div v-for="(group, yearMonth) in groupedDiaries" :key="yearMonth">
         <h3 style="margin: 24px 0 12px 0;">📅 {{ yearMonth }}</h3>
-        <div v-for="diary in group" :key="diary.id" class="diary-card" :class="{ 'pinned-card': diary.pinned }" :data-id="diary.id">
-          <div class="diary-header">
-            <div class="diary-title">
-              <span v-if="diary.pinned" class="pin-icon">📌</span>
-              {{ diary.title }}
-            </div>
-            <button class="pin-btn" @click.stop="togglePin(diary.id, diary.pinned)">
-              {{ diary.pinned ? '取消置顶' : '置顶' }}
-            </button>
+        <div
+          v-for="diary in group"
+          :key="diary.id"
+          class="diary-card"
+          :class="{ 'pinned-card': diary.pinned }"
+        >
+          <div class="diary-title">
+            {{ diary.title }}
+            <span v-if="diary.pinned" class="pinned-badge">📌 置顶</span>
           </div>
           <div class="diary-meta">
             <span>🕒 {{ formatDate(diary.created_at) }}</span>
@@ -25,8 +25,8 @@
               <span v-for="tag in diary.tags" :key="tag" class="tag">{{ tag }}</span>
             </span>
           </div>
-          
-          <!-- 可折叠的内容区域 -->
+
+          <!-- 可折叠内容区域 -->
           <div class="diary-content-wrapper" :class="{ 'is-expanded': expandedIds.has(diary.id) }">
             <MdPreview
               class="diary-content"
@@ -35,8 +35,6 @@
               codeTheme="github"
             />
           </div>
-          
-          <!-- 展开/收起按钮 -->
           <button
             v-if="contentOverflowMap[diary.id]"
             class="toggle-read-more"
@@ -44,10 +42,13 @@
           >
             {{ expandedIds.has(diary.id) ? '收起 ▲' : '展开全文 ▼' }}
           </button>
-          
+
           <div style="margin-top: 16px;">
             <button @click="handleEdit(diary.id)">✏️ 编辑</button>
             <button class="delete-btn" @click="handleDelete(diary.id)">🗑️ 删除</button>
+            <button class="pin-btn" @click="togglePin(diary.id, !diary.pinned)">
+              {{ diary.pinned ? '取消置顶' : '置顶' }}
+            </button>
           </div>
         </div>
       </div>
@@ -70,12 +71,9 @@ import { formatDate } from '@/utils/helpers';
 const store = useDiaryStore();
 const emit = defineEmits<{ (e: 'edit', diary: Diary): void }>();
 
-// 存储展开状态的日记ID
 const expandedIds = ref<Set<string>>(new Set());
-// 存储哪些日记的内容高度超过了阈值
 const contentOverflowMap = ref<Record<string, boolean>>({});
 
-// 按年月分组（后端已经按 pinned DESC, created_at DESC 排序）
 const groupedDiaries = computed(() => {
   const groups: Record<string, Diary[]> = {};
   for (const d of store.diaries) {
@@ -98,22 +96,8 @@ async function handleDelete(id: string) {
   }
 }
 
-// 置顶/取消置顶
-async function togglePin(id: string, currentPinned: boolean) {
-  try {
-    // 直接调用后端 API 更新 pinned 字段
-    const response = await fetch(`/api/diaries?id=${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pinned: !currentPinned })
-    });
-    if (!response.ok) throw new Error('操作失败');
-    // 重新加载列表（刷新数据）
-    await store.loadDiaries();
-  } catch (err) {
-    console.error(err);
-    alert('置顶操作失败，请重试');
-  }
+async function togglePin(id: string, pinned: boolean) {
+  await store.togglePin(id, pinned);
 }
 
 function toggleExpand(id: string) {
@@ -122,11 +106,9 @@ function toggleExpand(id: string) {
   } else {
     expandedIds.value.add(id);
   }
-  // 触发响应式更新
   expandedIds.value = new Set(expandedIds.value);
 }
 
-// 检测每个日记的内容区域是否溢出（高度超过 200px）
 async function checkContentOverflow() {
   await nextTick();
   const cards = document.querySelectorAll('.diary-card');
@@ -135,7 +117,7 @@ async function checkContentOverflow() {
     if (!id) continue;
     const contentWrapper = card.querySelector('.diary-content-wrapper');
     if (contentWrapper) {
-      const isOverflow = contentWrapper.scrollHeight > 200;
+      const isOverflow = contentWrapper.scrollHeight > 300;
       if (isOverflow !== contentOverflowMap.value[id]) {
         contentOverflowMap.value = {
           ...contentOverflowMap.value,
@@ -146,7 +128,6 @@ async function checkContentOverflow() {
   }
 }
 
-// 监听日记列表变化，重新检测溢出
 watch(() => store.diaries, async () => {
   await checkContentOverflow();
 }, { deep: true });
@@ -158,20 +139,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 内容包装器：默认最大高度 200px，溢出隐藏 */
 .diary-content-wrapper {
-  max-height: 200px;
+  max-height: 300px;
   overflow: hidden;
   transition: max-height 0.3s ease;
   position: relative;
 }
-
-/* 展开状态：移除最大高度限制 */
 .diary-content-wrapper.is-expanded {
   max-height: none;
 }
-
-/* 折叠状态下添加渐隐效果 */
 .diary-content-wrapper:not(.is-expanded)::after {
   content: '';
   position: absolute;
@@ -182,8 +158,6 @@ onMounted(async () => {
   background: linear-gradient(to bottom, transparent, var(--bg-surface));
   pointer-events: none;
 }
-
-/* 展开/收起按钮样式 */
 .toggle-read-more {
   background: none;
   color: var(--accent);
@@ -193,50 +167,32 @@ onMounted(async () => {
   border: 1px solid var(--border-color);
   border-radius: 2rem;
 }
-
 .toggle-read-more:hover {
   background: var(--accent);
   color: white;
 }
-
-/* 置顶卡片样式 */
 .pinned-card {
   border-left: 4px solid var(--accent);
-  background-color: rgba(59, 130, 246, 0.02);
+  background: var(--bg-surface);
 }
-
-.pin-icon {
-  margin-right: 6px;
-  color: var(--accent);
+.pinned-badge {
+  font-size: 0.7rem;
+  background: var(--accent);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
 }
-
-/* 卡片头部：标题和置顶按钮水平排列 */
-.diary-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
 .pin-btn {
   background: none;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  padding: 4px 10px;
-  font-size: 0.7rem;
-  border-radius: 2rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  margin-left: 0.5rem;
 }
-
 .pin-btn:hover {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
-}
-
-/* 确保卡片有相对定位 */
-.diary-card {
-  position: relative;
 }
 </style>

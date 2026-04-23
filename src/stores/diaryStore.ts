@@ -25,11 +25,16 @@ export const useDiaryStore = defineStore('diary', () => {
     } else {
       await createDiary(data as any);
     }
-    await loadDiaries(); // 刷新列表
+    await loadDiaries();
   }
 
   async function removeDiary(id: string) {
     await deleteDiary(id);
+    await loadDiaries();
+  }
+
+  async function togglePin(id: string, pinned: boolean) {
+    await updateDiary(id, { pinned });
     await loadDiaries();
   }
 
@@ -38,5 +43,5 @@ export const useDiaryStore = defineStore('diary', () => {
     loadDiaries();
   }
 
-  return { diaries, loading, currentFilters, loadDiaries, saveDiary, removeDiary, resetFilters };
+  return { diaries, loading, currentFilters, loadDiaries, saveDiary, removeDiary, togglePin, resetFilters };
 });

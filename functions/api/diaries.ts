@@ -4,7 +4,6 @@ export const onRequest: PagesFunction = async (context) => {
   const url = new URL(request.url);
   const method = request.method;
 
-  // 动态导入 Supabase 客户端（避免打包问题）
   const { createClient } = await import('@supabase/supabase-js');
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 
@@ -14,52 +13,46 @@ export const onRequest: PagesFunction = async (context) => {
     'Access-Control-Allow-Headers': 'Content-Type',
   };
 
-  // 处理 CORS 预检请求
   if (method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-
     // ---------- GET /api/diaries ----------
     if (method === 'GET' && url.pathname === '/api/diaries') {
       const search = url.searchParams.get('search') || '';
       const tag = url.searchParams.get('tag') || '';
       const startDate = url.searchParams.get('startDate');
       const endDate = url.searchParams.get('endDate');
-      const isPublic = url.searchParams.get('isPublic'); // 'true' 或 'false'
+      const isPublic = url.searchParams.get('isPublic');
 
       let query = supabase.from('diaries').select('*');
 
-      // 全文搜索（标题+内容，模糊匹配）
       if (search) {
         query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`);
       }
-
-      // 标签筛选（数组包含）
       if (tag) {
         query = query.contains('tags', [tag]);
       }
-
-      // 日期范围
       if (startDate) {
         query = query.gte('created_at', startDate);
       }
       if (endDate) {
         query = query.lte('created_at', endDate);
       }
-
-      // 公开/私密筛选
       if (isPublic !== null) {
         query = query.eq('is_public', isPublic === 'true');
       }
 
-    // 在 GET 接口中修改 order 子句
-    const { data, error } = await query.order('pinned', { 
-      ascending: false }).order('created_at', { ascending: false });
+      // 排序：置顶优先，再按创建时间倒序
+      const { data, error } = await query
+        .order('pinned', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return Response.json(data, { headers: corsHeaders });
     }
 
-    // ---------- POST /api/diaries ---------- 新增
+    // ---------- POST /api/diaries ----------
     if (method === 'POST' && url.pathname === '/api/diaries') {
       const { title, content, tags, is_public, image_url } = await request.json();
       const newEntry = {
@@ -69,6 +62,7 @@ export const onRequest: PagesFunction = async (context) => {
         tags: tags || [],
         is_public: is_public !== undefined ? is_public : true,
         image_url: image_url || null,
+        pinned: false,                     // 新增日记默认不置顶
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -77,7 +71,7 @@ export const onRequest: PagesFunction = async (context) => {
       return Response.json(newEntry, { status: 201, headers: corsHeaders });
     }
 
-    // ---------- PUT /api/diaries?id=xxx ---------- 编辑
+    // ---------- PUT /api/diaries?id=xxx ----------
     if (method === 'PUT' && url.pathname === '/api/diaries') {
       const id = url.searchParams.get('id');
       if (!id) {
@@ -104,12 +98,9 @@ export const onRequest: PagesFunction = async (context) => {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-
-
-    // 未匹配任何路由
     return new Response('Not Found', { status: 404, headers: corsHeaders });
   } catch (error) {
-    console.error('API Error:', error);
+    console.error(error);
     return Response.json({ error: 'Internal Server Error' }, { status: 500, headers: corsHeaders });
   }
 };
