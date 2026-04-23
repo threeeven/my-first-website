@@ -260,6 +260,113 @@ button:active {
   color: var(--text-secondary);
 }
 
+.diary-content-wrapper {
+  max-height: 300px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  position: relative;
+}
+.diary-content-wrapper.is-expanded {
+  max-height: none;
+}
+.diary-content-wrapper:not(.is-expanded)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, var(--bg-surface));
+  pointer-events: none;
+}
+.toggle-read-more {
+  background: none;
+  color: var(--accent);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+}
+.toggle-read-more:hover {
+  background: var(--accent);
+  color: white;
+}
+.pinned-card {
+  border-left: 4px solid var(--accent);
+  background: var(--bg-surface);
+}
+.pinned-badge {
+  font-size: 0.7rem;
+  background: var(--accent);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.pin-btn {
+  background: none;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  margin-left: 0.5rem;
+}
+.pin-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.stats-panel {
+  background: var(--bg-surface);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-md);
+}
+.stats-panel h3 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  text-align: center;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.top-tags h4, .recent-activity h4 {
+  margin: 1rem 0 0.5rem 0;
+  font-size: 1rem;
+}
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.stat-tag {
+  background: #eef2ff;
+  color: var(--accent);
+  padding: 0.25rem 0.75rem;
+  border-radius: 2rem;
+  font-size: 0.8rem;
+}
+
+
 /* ========== 响应式断点 ========== */
 
 /* 平板设备 (宽度 <= 900px) */

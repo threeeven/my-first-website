@@ -28,25 +28,15 @@
         </span>
       </div>
     </div>
-
-    <div class="recent-activity" v-if="lastWeekActivity.length">
-      <h4>📅 最近7天写作频率</h4>
-      <div class="activity-bars">
-        <div v-for="day in lastWeekActivity" :key="day.date" class="activity-bar-item">
-          <div class="bar-label">{{ day.label }}</div>
-          <div class="bar-container">
-            <div class="bar" :style="{ width: day.percentage + '%' }"></div>
-          </div>
-          <div class="bar-count">{{ day.count }}</div>
-        </div>
-      </div>
-    </div>
+    
+    <Heatmap />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useDiaryStore } from '@/stores/diaryStore';
+import Heatmap from './Heatmap.vue';
 
 const store = useDiaryStore();
 
@@ -102,109 +92,5 @@ const topTags = computed(() => {
     .slice(0, 5);
 });
 
-// 最近7天写作频率
-const lastWeekActivity = computed(() => {
-  const days = ['日', '一', '二', '三', '四', '五', '六'];
-  const result = [];
-  const today = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(today.getDate() - i);
-    const dateStr = date.toISOString().split('T')[0]!;
-    const count = store.diaries.filter(d => d.created_at.startsWith(dateStr)).length;
-    const maxCount = Math.max(...store.diaries.map(d => 
-      store.diaries.filter(dd => dd.created_at.split('T')[0] === d.created_at.split('T')[0]).length
-    ), 1);
-    const percentage = (count / maxCount) * 100;
-    result.push({
-      date: dateStr,
-      label: `${date.getMonth()+1}/${date.getDate()} (${days[date.getDay()]})`,
-      count,
-      percentage,
-    });
-  }
-  return result;
-});
 </script>
 
-<style scoped>
-.stats-panel {
-  background: var(--bg-surface);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-md);
-}
-.stats-panel h3 {
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-}
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.stat-card {
-  text-align: center;
-  padding: 0.75rem;
-  background: var(--bg-primary);
-  border-radius: var(--radius-sm);
-}
-.stat-value {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-.stat-label {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-}
-.top-tags h4, .recent-activity h4 {
-  margin: 1rem 0 0.5rem 0;
-  font-size: 1rem;
-}
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.stat-tag {
-  background: #eef2ff;
-  color: var(--accent);
-  padding: 0.25rem 0.75rem;
-  border-radius: 2rem;
-  font-size: 0.8rem;
-}
-.activity-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.activity-bar-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-}
-.bar-label {
-  width: 70px;
-  flex-shrink: 0;
-}
-.bar-container {
-  flex: 1;
-  background: var(--border-color);
-  border-radius: 1rem;
-  overflow: hidden;
-}
-.bar {
-  background: var(--accent);
-  height: 8px;
-  border-radius: 1rem;
-  transition: width 0.3s;
-}
-.bar-count {
-  width: 30px;
-  text-align: right;
-}
-</style>

@@ -2,8 +2,8 @@
   <div class="container">
     <DiaryEditor ref="editorRef" @saved="refreshList" />
     <div class="list-panel">
-      <StatsPanel />
       <DiaryList @edit="handleEditDiary" />
+      <StatsPanel />
     </div>
   </div>
 </template>
