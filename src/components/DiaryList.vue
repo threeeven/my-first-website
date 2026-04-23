@@ -5,7 +5,7 @@
     <div v-else>
       <div v-for="(group, yearMonth) in groupedDiaries" :key="yearMonth">
         <h3 style="margin: 24px 0 12px 0;">📅 {{ yearMonth }}</h3>
-        <div v-for="diary in group" :key="diary.id" class="diary-card">
+        <div v-for="diary in group" :key="diary.id" class="diary-card" :data-id="diary.id">
           <div class="diary-title">{{ diary.title }}</div>
           <div class="diary-meta">
             <span>🕒 {{ formatDate(diary.created_at) }}</span>
