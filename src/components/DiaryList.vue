@@ -76,19 +76,10 @@ const contentOverflowMap = ref<Record<string, boolean>>({});
 
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
-// 根据日期筛选日记（精确到天，时区：前端 UTC+8，数据库 UTC）
+// 根据日期筛选日记（精确到天）
 function filterByDate(date: string) {
   if (searchBarRef.value) {
-    // 构造 UTC+8 当天的起止时刻（绝对时间）
-    const startUTC = new Date(`${date}T00:00:00+08:00`);
-    const endUTC   = new Date(`${date}T23:59:59.999+08:00`);
-    
-    // 将这两个绝对时刻转换回 UTC 时区的日期字符串（YYYY-MM-DD）
-    const startDate = startUTC.toISOString()!;
-    const endDate   = endUTC.toISOString()!;
-    
-    // 传给组件（仍是日期形式）
-    searchBarRef.value.setDateRange(startDate, endDate);
+    searchBarRef.value.setDateRange(date, date);
     searchBarRef.value.triggerSearch();
   }
 }
