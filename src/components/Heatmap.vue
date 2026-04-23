@@ -1,130 +1,214 @@
 <template>
   <div class="heatmap">
-    <h4>🔥 写作热力图</h4>
+    <h4>📅 日记热力图（最近120天）</h4>
     <div class="heatmap-container">
-      <div class="months">
-        <span v-for="month in months" :key="month">{{ month }}</span>
-      </div>
-      <div class="grid">
+      <!-- 月份标签行 -->
+      <div class="month-row">
+        <div class="weekday-placeholder"></div>
         <div
-          v-for="day in days"
-          :key="day.date"
-          class="day-cell"
-          :style="{ backgroundColor: getColor(day.count) }"
-          :title="`${day.date}: ${day.count} 篇日记`"
-        ></div>
+          v-for="(month, idx) in monthLabels"
+          :key="idx"
+          class="month-cell"
+          :style="{ gridColumn: `span ${month.span}` }"
+        >
+          {{ month.name }}
+        </div>
       </div>
-    </div>
-    <div class="legend">
-      <span>少</span>
-      <span v-for="level in colorLevels" :key="level" :style="{ backgroundColor: level }" class="legend-color"></span>
-      <span>多</span>
+
+      <!-- 星期标签 + 热力图网格 -->
+      <div class="heatmap-grid">
+        <!-- 星期标签列 -->
+        <div class="weekday-labels">
+          <div v-for="weekday in weekdays" :key="weekday" class="weekday-label">
+            {{ weekday }}
+          </div>
+        </div>
+        <!-- 网格主体 -->
+        <div class="grid-cells" :style="{ gridTemplateColumns: `repeat(${weeksCount}, 1fr)` }">
+          <div
+            v-for="day in days"
+            :key="day.date"
+            class="cell"
+            :class="{
+              'has-diary': day.count > 0,
+              'low': day.count > 0 && day.count <= 1,
+              'medium': day.count > 1 && day.count <= 3,
+              'high': day.count > 3,
+            }"
+            :title="`${day.date} (${day.count} 篇日记)`"
+            @click="emit('dateClick', day.date!)"
+          >
+            <span class="day-number">{{ day.dayOfMonth }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useDiaryStore } from '@/stores/diaryStore';
+import type { Diary } from '@/types/diary';
 
-const store = useDiaryStore();
+const props = defineProps<{ diaries: Diary[] }>();
+const emit = defineEmits<{ (e: 'dateClick', date: string): void }>();
 
-// 获取最近365天的日期范围（或可配置）
-const startDate = new Date();
-startDate.setDate(startDate.getDate() - 364); // 365天，包含今天
-startDate.setHours(0, 0, 0, 0);
+// 星期顺序（从上到下：周日 -> 周六）
+const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
-// 生成日期数组
+// 生成过去120天的日期数组（包括今天）
 const days = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   const result = [];
-  const current = new Date(startDate);
-  while (current <= today) {
-    const dateStr = current.toISOString().split('T')[0]!;
-    const count = store.diaries.filter(d => d.created_at.startsWith(dateStr)).length;
+  for (let i = 119; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
+    const count = props.diaries.filter(d => d.created_at.startsWith(dateStr!)).length;
     result.push({
       date: dateStr,
+      dayOfMonth: date.getDate(),
       count,
     });
-    current.setDate(current.getDate() + 1);
   }
   return result;
 });
 
-// 获取该年月份列表（用于显示月份标签）
-const months = computed(() => {
-  const monthsSet = new Set<string>();
-  for (const day of days.value) {
-    const date = new Date(day.date!);
-    const monthStr = `${date.getFullYear()}年${date.getMonth()+1}月`;
-    monthsSet.add(monthStr);
+// 按周分组（每7天一组，从周日开始）
+const weeks = computed(() => {
+  const weeks: typeof days.value[] = [];
+  for (let i = 0; i < days.value.length; i += 7) {
+    weeks.push(days.value.slice(i, i + 7));
   }
-  return Array.from(monthsSet);
+  return weeks;
 });
 
-// 热力图颜色等级（由浅到深）
-const colorLevels = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
-function getColor(count: number): string {
-  if (count === 0) return colorLevels[0]!;
-  if (count === 1) return colorLevels[1]!;
-  if (count === 2) return colorLevels[2]!;
-  if (count === 3) return colorLevels[3]!;
-  return colorLevels[4]!;
-}
+const weeksCount = computed(() => weeks.value.length);
+
+// 生成月份标签（每个月份占据几列）
+const monthLabels = computed(() => {
+  const labels: { name: string; span: number }[] = [];
+  let currentMonth = '';
+  let span = 0;
+  for (let i = 0; i < days.value.length; i++) {
+    const day = days.value[i]!;
+    const month = day.date!.slice(0, 7); // YYYY-MM
+    if (month !== currentMonth) {
+      if (currentMonth !== '') {
+        labels.push({ name: currentMonth.slice(5) + '月', span });
+      }
+      currentMonth = month;
+      span = 1;
+    } else {
+      span++;
+    }
+  }
+  if (currentMonth !== '') {
+    labels.push({ name: currentMonth.slice(5) + '月', span });
+  }
+  return labels;
+});
 </script>
 
 <style scoped>
 .heatmap {
+  margin-top: 1rem;
   background: var(--bg-surface);
   border-radius: var(--radius);
   padding: 1rem;
-  margin-top: 1rem;
-}
-.heatmap h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-}
-.heatmap-container {
+  box-shadow: var(--shadow-sm);
   overflow-x: auto;
 }
-.months {
+.heatmap-container {
+  min-width: 600px;
+}
+.month-row {
   display: flex;
-  margin-bottom: 0.5rem;
+  margin-left: 48px; /* 为星期标签留出空间 */
+  margin-bottom: 4px;
+}
+.weekday-placeholder {
+  width: 48px;
+  flex-shrink: 0;
+}
+.month-cell {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: nowrap;
+}
+.heatmap-grid {
+  display: flex;
+}
+.weekday-labels {
+  width: 48px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+.weekday-label {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.7rem;
   color: var(--text-secondary);
 }
-.months span {
+.grid-cells {
   flex: 1;
-  text-align: center;
-}
-.grid {
   display: grid;
-  grid-template-columns: repeat(53, 1fr);  /* 一年约53周 */
-  gap: 3px;
+  gap: 4px;
 }
-.day-cell {
-  aspect-ratio: 1;
-  border-radius: 2px;
-  transition: transform 0.1s;
-  cursor: default;
-}
-.day-cell:hover {
-  transform: scale(1.2);
-  z-index: 1;
-}
-.legend {
+.cell {
+  aspect-ratio: 1 / 1;
+  background: var(--border-color);
+  border-radius: 4px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
-  margin-top: 0.5rem;
-  font-size: 0.7rem;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s;
+  position: relative;
 }
-.legend-color {
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
+.cell:hover {
+  transform: scale(1.05);
+  z-index: 1;
+}
+.day-number {
+  font-size: 0.65rem;
+  color: var(--text-primary);
+  opacity: 0.8;
+}
+.has-diary {
+  background: #c6e48b;
+}
+.low {
+  background: #9ec867;
+}
+.medium {
+  background: #6aa84f;
+}
+.high {
+  background: #38761d;
+}
+.has-diary .day-number {
+  color: white;
+  font-weight: bold;
+}
+@media (prefers-color-scheme: dark) {
+  .has-diary {
+    background: #2c5a2c;
+  }
+  .low {
+    background: #3c7a3c;
+  }
+  .medium {
+    background: #4c9a4c;
+  }
+  .high {
+    background: #6cba6c;
+  }
 }
 </style>

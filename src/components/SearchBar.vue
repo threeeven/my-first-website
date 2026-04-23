@@ -45,4 +45,16 @@ function resetFilters() {
   filters.isPublic = '';
   store.resetFilters();
 }
+
+// 暴露给父组件的方法
+function setDateRange(startDate: string, endDate: string) {
+  filters.startDate = startDate;
+  filters.endDate = endDate;
+}
+
+function triggerSearch() {
+  applyFilters();
+}
+
+defineExpose({ setDateRange, triggerSearch });
 </script>

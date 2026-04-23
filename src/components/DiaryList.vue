@@ -1,6 +1,6 @@
 <template>
   <div class="list-panel">
-    <SearchBar />
+    <SearchBar ref="SearchBarRef"/>
     <div v-if="store.loading" class="loading">加载中...</div>
     <div v-else>
       <div v-for="(group, yearMonth) in groupedDiaries" :key="yearMonth">
@@ -73,6 +73,18 @@ const emit = defineEmits<{ (e: 'edit', diary: Diary): void }>();
 
 const expandedIds = ref<Set<string>>(new Set());
 const contentOverflowMap = ref<Record<string, boolean>>({});
+
+const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
+
+// 根据日期筛选日记（精确到天）
+function filterByDate(date: string) {
+  if (searchBarRef.value) {
+    searchBarRef.value.setDateRange(date, date);
+    searchBarRef.value.triggerSearch();
+  }
+}
+
+defineExpose({ filterByDate });
 
 const groupedDiaries = computed(() => {
   const groups: Record<string, Diary[]> = {};
