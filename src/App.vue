@@ -12,7 +12,7 @@
 import { ref } from 'vue';
 import DiaryEditor from './components/DiaryEditor.vue';
 import DiaryList from './components/DiaryList.vue';
-import HeatMap from './components/HeatMap.vue';
+import HeatMap from './components/HeatMap.vue'
 import type { Diary } from './types/diary';
 import { useDiaryStore } from './stores/diaryStore';
 
