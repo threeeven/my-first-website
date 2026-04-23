@@ -79,8 +79,11 @@ const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 // 根据日期筛选日记（精确到天）
 function filterByDate(date: string) {
   if (searchBarRef.value) {
-    searchBarRef.value.setDateRange(date, date);
-    searchBarRef.value.triggerSearch();
+    // 构造 UTC+8 当天的起止时刻，转换为 UTC 的 ISO 字符串
+    const start = new Date(`${date}T00:00:00+08:00`).toISOString();
+    const end = new Date(`${date}T23:59:59.999+08:00`).toISOString();
+    // 假设 setDateRange 接受两个 UTC 时间字符串作为范围
+    searchBarRef.value.setDateRange(start, end);
   }
 }
 
