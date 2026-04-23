@@ -29,7 +29,7 @@
       </div>
     </div>
     
-    <Heatmap />
+    <HeatMap :diaries="store.diaries" @dateClick="emitDateClick" />
   </div>
 </template>
 
@@ -39,6 +39,11 @@ import { useDiaryStore } from '@/stores/diaryStore';
 import Heatmap from './Heatmap.vue';
 
 const store = useDiaryStore();
+const emit = defineEmits<{ (e: 'dateClick', date: string): void }>();
+
+function emitDateClick(date: string) {
+  emit('dateClick', date);
+}
 
 // 总日记数
 const totalCount = computed(() => store.diaries.length);
