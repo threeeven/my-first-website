@@ -38,7 +38,7 @@ export const onRequest: PagesFunction = async (context) => {
         query = query.gte('created_at', startDate);
       }
       if (endDate) {
-        query = query.lte('created_at', endDate);
+        query = query.lt('created_at', endDate);
       }
       if (isPublic !== null) {
         query = query.eq('is_public', isPublic === 'true');
