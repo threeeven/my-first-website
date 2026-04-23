@@ -29,7 +29,7 @@
       </div>
     </div>
     
-    <HeatMap :diaries="store.diaries" @dateClick="emitDateClick" />
+    <HeatMap :diaries="store.diaries" @dateClick="emitDateClick($event)" />
   </div>
 </template>
 
