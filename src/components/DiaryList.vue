@@ -84,8 +84,8 @@ function filterByDate(date: string) {
     const endUTC   = new Date(`${date}T23:59:59.999+08:00`);
     
     // 将这两个绝对时刻转换回 UTC 时区的日期字符串（YYYY-MM-DD）
-    const startDate = startUTC.toISOString().split('T')[0]!;
-    const endDate   = endUTC.toISOString().split('T')[0]!;
+    const startDate = startUTC.toISOString()!;
+    const endDate   = endUTC.toISOString()!;
     
     // 传给组件（仍是日期形式）
     searchBarRef.value.setDateRange(startDate, endDate);
