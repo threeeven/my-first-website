@@ -79,16 +79,16 @@ const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 // 根据日期筛选日记（精确到天）
 function filterByDate(date: string) {
   if (searchBarRef.value) {
-    // 构造 UTC+8 当天的起止时刻，转换为 UTC 的 ISO 字符串
-    const start = new Date(`${date}T00:00:00+08:00`).toISOString();
-    const end = new Date(`${date}T23:59:59.999+08:00`).toISOString();
-    console.log('=== 日期筛选调试 ===');
-    console.log('输入的 UTC+8 日期:', date);
-    console.log('UTC 起始时间:', start);
-    console.log('UTC 结束时间:', end);
-    console.log('===================');
-    // 假设 setDateRange 接受两个 UTC 时间字符串作为范围
-    searchBarRef.value.setDateRange(start, end);
+    // 构造 UTC+8 当天的起止时刻（绝对时间）
+    const startUTC = new Date(`${date}T00:00:00+08:00`);
+    const endUTC   = new Date(`${date}T23:59:59.999+08:00`);
+    
+    // 将这两个绝对时刻转换回 UTC 时区的日期字符串（YYYY-MM-DD）
+    const startDate = startUTC.toISOString().split('T')[0]!;
+    const endDate   = endUTC.toISOString().split('T')[0]!;
+    
+    // 传给组件（仍是日期形式）
+    searchBarRef.value.setDateRange(startDate, endDate);
   }
 }
 
