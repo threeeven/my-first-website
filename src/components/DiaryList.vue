@@ -76,7 +76,7 @@ const contentOverflowMap = ref<Record<string, boolean>>({});
 
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 
-// 根据日期筛选日记（精确到天）
+// 根据日期筛选日记（精确到天，时区：前端 UTC+8，数据库 UTC）
 function filterByDate(date: string) {
   if (searchBarRef.value) {
     // 构造 UTC+8 当天的起止时刻（绝对时间）
@@ -89,6 +89,7 @@ function filterByDate(date: string) {
     
     // 传给组件（仍是日期形式）
     searchBarRef.value.setDateRange(startDate, endDate);
+    searchBarRef.value.triggerSearch();
   }
 }
 
@@ -97,8 +98,8 @@ defineExpose({ filterByDate });
 const groupedDiaries = computed(() => {
   const groups: Record<string, Diary[]> = {};
   for (const d of store.diaries) {
-    const adjustedDate = new Date(new Date(d.created_at).getTime() + 8 * 60 * 60 * 1000);
-    const yearMonth = `${adjustedDate.getUTCFullYear()}-${adjustedDate.getUTCMonth() + 1}`;
+    const date = new Date(d.created_at);
+    const yearMonth = `${date.getFullYear()}-${date.getMonth() + 1}`;
     if (!groups[yearMonth]) groups[yearMonth] = [];
     groups[yearMonth].push(d);
   }
