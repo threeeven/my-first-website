@@ -54,9 +54,9 @@ export const onRequest: PagesFunction = async (context) => {
         query = query.eq('is_public', isPublic === 'true');
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
-      if (error) throw error;
-      return Response.json(data, { headers: corsHeaders });
+    // 在 GET 接口中修改 order 子句
+    const { data, error } = await query.order('pinned', { 
+      ascending: false }).order('created_at', { ascending: false });
     }
 
     // ---------- POST /api/diaries ---------- 新增

@@ -5,8 +5,16 @@
     <div v-else>
       <div v-for="(group, yearMonth) in groupedDiaries" :key="yearMonth">
         <h3 style="margin: 24px 0 12px 0;">📅 {{ yearMonth }}</h3>
-        <div v-for="diary in group" :key="diary.id" class="diary-card" :data-id="diary.id">
-          <div class="diary-title">{{ diary.title }}</div>
+        <div v-for="diary in group" :key="diary.id" class="diary-card" :class="{ 'pinned-card': diary.pinned }" :data-id="diary.id">
+          <div class="diary-header">
+            <div class="diary-title">
+              <span v-if="diary.pinned" class="pin-icon">📌</span>
+              {{ diary.title }}
+            </div>
+            <button class="pin-btn" @click.stop="togglePin(diary.id, diary.pinned)">
+              {{ diary.pinned ? '取消置顶' : '置顶' }}
+            </button>
+          </div>
           <div class="diary-meta">
             <span>🕒 {{ formatDate(diary.created_at) }}</span>
             <span :class="diary.is_public ? 'badge-public' : 'badge-private'">
@@ -28,7 +36,7 @@
             />
           </div>
           
-          <!-- 展开/收起按钮（仅当内容高度超过阈值时显示） -->
+          <!-- 展开/收起按钮 -->
           <button
             v-if="contentOverflowMap[diary.id]"
             class="toggle-read-more"
@@ -67,7 +75,7 @@ const expandedIds = ref<Set<string>>(new Set());
 // 存储哪些日记的内容高度超过了阈值
 const contentOverflowMap = ref<Record<string, boolean>>({});
 
-// 按年月分组
+// 按年月分组（后端已经按 pinned DESC, created_at DESC 排序）
 const groupedDiaries = computed(() => {
   const groups: Record<string, Diary[]> = {};
   for (const d of store.diaries) {
@@ -90,6 +98,24 @@ async function handleDelete(id: string) {
   }
 }
 
+// 置顶/取消置顶
+async function togglePin(id: string, currentPinned: boolean) {
+  try {
+    // 直接调用后端 API 更新 pinned 字段
+    const response = await fetch(`/api/diaries?id=${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pinned: !currentPinned })
+    });
+    if (!response.ok) throw new Error('操作失败');
+    // 重新加载列表（刷新数据）
+    await store.loadDiaries();
+  } catch (err) {
+    console.error(err);
+    alert('置顶操作失败，请重试');
+  }
+}
+
 function toggleExpand(id: string) {
   if (expandedIds.value.has(id)) {
     expandedIds.value.delete(id);
@@ -102,7 +128,6 @@ function toggleExpand(id: string) {
 
 // 检测每个日记的内容区域是否溢出（高度超过 200px）
 async function checkContentOverflow() {
-  // 等待 DOM 渲染完成
   await nextTick();
   const cards = document.querySelectorAll('.diary-card');
   for (const card of cards) {
@@ -110,7 +135,7 @@ async function checkContentOverflow() {
     if (!id) continue;
     const contentWrapper = card.querySelector('.diary-content-wrapper');
     if (contentWrapper) {
-      const isOverflow = contentWrapper.scrollHeight > 200; // 阈值 200px
+      const isOverflow = contentWrapper.scrollHeight > 200;
       if (isOverflow !== contentOverflowMap.value[id]) {
         contentOverflowMap.value = {
           ...contentOverflowMap.value,
@@ -146,7 +171,7 @@ onMounted(async () => {
   max-height: none;
 }
 
-/* 可选：在折叠状态下添加渐隐效果（让用户感知有更多内容） */
+/* 折叠状态下添加渐隐效果 */
 .diary-content-wrapper:not(.is-expanded)::after {
   content: '';
   position: absolute;
@@ -174,9 +199,44 @@ onMounted(async () => {
   color: white;
 }
 
-/* 确保卡片有 data-id 属性用于检测（我们需要在模板中添加） */
+/* 置顶卡片样式 */
+.pinned-card {
+  border-left: 4px solid var(--accent);
+  background-color: rgba(59, 130, 246, 0.02);
+}
+
+.pin-icon {
+  margin-right: 6px;
+  color: var(--accent);
+}
+
+/* 卡片头部：标题和置顶按钮水平排列 */
+.diary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pin-btn {
+  background: none;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  border-radius: 2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pin-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* 确保卡片有相对定位 */
 .diary-card {
-  /* 已有样式保持不变 */
   position: relative;
 }
 </style>
