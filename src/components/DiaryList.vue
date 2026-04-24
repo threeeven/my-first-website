@@ -40,6 +40,7 @@
               🏷️
               <span v-for="tag in diary.tags" :key="tag" class="tag">{{ tag }}</span>
             </span>
+            <!-- <span v-if="diary.visitor_province">📍 {{ diary.visitor_city ? `${diary.visitor_city}, ` : '' }}{{ diary.visitor_province }}</span> -->
           </div>
 
           <!-- 可折叠内容区域 -->

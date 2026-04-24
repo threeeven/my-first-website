@@ -9,7 +9,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// ../.wrangler/tmp/bundle-TQ7E4W/checked-fetch.js
+// ../.wrangler/tmp/bundle-sjw12i/checked-fetch.js
 function checkURL(request, init) {
   const url = request instanceof URL ? request : new URL(
     (typeof request === "string" ? new Request(request, init) : request).url
@@ -27,7 +27,7 @@ function checkURL(request, init) {
 }
 var urls;
 var init_checked_fetch = __esm({
-  "../.wrangler/tmp/bundle-TQ7E4W/checked-fetch.js"() {
+  "../.wrangler/tmp/bundle-sjw12i/checked-fetch.js"() {
     urls = /* @__PURE__ */ new Set();
     __name(checkURL, "checkURL");
     globalThis.fetch = new Proxy(globalThis.fetch, {
@@ -20776,6 +20776,10 @@ var init_diaries = __esm({
         }
         if (method === "POST" && url.pathname === "/api/diaries") {
           const { title, content, tags, is_public, image_url } = await request.json();
+          const ip = request.headers.get("CF-Connecting-IP");
+          const cf = request.cf;
+          const province = cf?.region || null;
+          const city = cf?.city || null;
           const newEntry = {
             id: Date.now().toString(),
             title: title.trim() || "\u65E0\u6807\u9898",
@@ -20785,6 +20789,10 @@ var init_diaries = __esm({
             image_url: image_url || null,
             pinned: false,
             // 新增日记默认不置顶
+            // ===== 将地理位置信息添加到数据库条目中 =====
+            visitor_ip: ip,
+            visitor_province: province,
+            visitor_city: city,
             created_at: (/* @__PURE__ */ new Date()).toISOString(),
             updated_at: (/* @__PURE__ */ new Date()).toISOString()
           };
@@ -20912,11 +20920,11 @@ var init_functionsRoutes_0_44504246187645013 = __esm({
   }
 });
 
-// ../.wrangler/tmp/bundle-TQ7E4W/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-sjw12i/middleware-loader.entry.ts
 init_functionsRoutes_0_44504246187645013();
 init_checked_fetch();
 
-// ../.wrangler/tmp/bundle-TQ7E4W/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-sjw12i/middleware-insertion-facade.js
 init_functionsRoutes_0_44504246187645013();
 init_checked_fetch();
 
@@ -21417,7 +21425,7 @@ var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx)
 }, "jsonError");
 var middleware_miniflare3_json_error_default = jsonError;
 
-// ../.wrangler/tmp/bundle-TQ7E4W/middleware-insertion-facade.js
+// ../.wrangler/tmp/bundle-sjw12i/middleware-insertion-facade.js
 var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
   middleware_ensure_req_body_drained_default,
   middleware_miniflare3_json_error_default
@@ -21451,7 +21459,7 @@ function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
 }
 __name(__facade_invoke__, "__facade_invoke__");
 
-// ../.wrangler/tmp/bundle-TQ7E4W/middleware-loader.entry.ts
+// ../.wrangler/tmp/bundle-sjw12i/middleware-loader.entry.ts
 var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
   constructor(scheduledTime, cron, noRetry) {
     this.scheduledTime = scheduledTime;

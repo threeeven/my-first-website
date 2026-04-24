@@ -56,7 +56,7 @@ function checkURL2(request, init) {
 __name(checkURL2, "checkURL");
 var urls2;
 var init_checked_fetch = __esm({
-  "../.wrangler/tmp/bundle-TQ7E4W/checked-fetch.js"() {
+  "../.wrangler/tmp/bundle-sjw12i/checked-fetch.js"() {
     urls2 = /* @__PURE__ */ new Set();
     __name2(checkURL2, "checkURL");
     globalThis.fetch = new Proxy(globalThis.fetch, {
@@ -21206,6 +21206,10 @@ var init_diaries = __esm({
         }
         if (method === "POST" && url.pathname === "/api/diaries") {
           const { title, content, tags, is_public, image_url } = await request.json();
+          const ip = request.headers.get("CF-Connecting-IP");
+          const cf = request.cf;
+          const province = cf?.region || null;
+          const city = cf?.city || null;
           const newEntry = {
             id: Date.now().toString(),
             title: title.trim() || "\u65E0\u6807\u9898",
@@ -21215,6 +21219,10 @@ var init_diaries = __esm({
             image_url: image_url || null,
             pinned: false,
             // 新增日记默认不置顶
+            // ===== 将地理位置信息添加到数据库条目中 =====
+            visitor_ip: ip,
+            visitor_province: province,
+            visitor_city: city,
             created_at: (/* @__PURE__ */ new Date()).toISOString(),
             updated_at: (/* @__PURE__ */ new Date()).toISOString()
           };

@@ -55,6 +55,15 @@ export const onRequest = async (context) => {
     // ---------- POST /api/diaries ----------
     if (method === 'POST' && url.pathname === '/api/diaries') {
       const { title, content, tags, is_public, image_url } = await request.json();
+
+      // ===== 在这里添加 GeoIP 信息获取的代码 =====
+      // 从 request.cf 对象中获取地理位置信息
+      // 更多可用字段请查看 Cloudflare 官方文档
+      const ip = request.headers.get('CF-Connecting-IP'); // 获取真实客户端IP[reference:6]
+      const cf = request.cf;
+      const province = (cf as any)?.region || null;      // 获取省份（信息在 region 字段中）
+      const city = (cf as any)?.city || null;            // 获取城市
+
       const newEntry = {
         id: Date.now().toString(),
         title: title.trim() || '无标题',
@@ -63,6 +72,10 @@ export const onRequest = async (context) => {
         is_public: is_public !== undefined ? is_public : true,
         image_url: image_url || null,
         pinned: false,                     // 新增日记默认不置顶
+        // ===== 将地理位置信息添加到数据库条目中 =====
+        visitor_ip: ip,
+        visitor_province: province,
+        visitor_city: city,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
