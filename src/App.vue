@@ -18,10 +18,12 @@ import { useDiaryStore } from './stores/diaryStore';
 
 const store = useDiaryStore();
 const editorRef = ref<InstanceType<typeof DiaryEditor> | null>(null);
+const diaryListRef = ref<InstanceType<typeof DiaryList> | null>(null);
 
 function handleEditDiary(diary: Diary) {
   editorRef.value?.setEditMode(diary);
 }
+
 
 // 处理热力图日期点击：加载当天的日记
 async function handleDateSelected(dateStr: string) {
@@ -39,6 +41,6 @@ async function handleDateSelected(dateStr: string) {
 }
 
 function refreshList() {
-  // 列表会自动刷新（因为 store 已更新），统计面板也会自动响应
+  store.loadDiaries();
 }
 </script>
