@@ -47,12 +47,6 @@
       </button>
     </div>
 
-    <input type="file" @change="handleImageUpload" accept="image/*" />
-    <div class="image-preview" v-if="form.image_url">
-      <img :src="form.image_url" width="80" />
-      <button @click="form.image_url = null">移除</button>
-    </div>
-
     <div style="display: flex; gap: 12px; margin-top: 16px;">
       <button @click="handleSave">💾 保存</button>
       <button @click="resetForm" style="background:#94a3b8;">取消编辑</button>
@@ -142,17 +136,6 @@ function resetForm() {
   form.pinned = false;
   form.image_url = null;
   clearDraft();
-}
-
-async function handleImageUpload(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-  try {
-    const url = await uploadImage(file);
-    form.image_url = url;
-  } catch (err) {
-    alert('图片上传失败');
-  }
 }
 
 async function handleEditorImageUpload(files: File[], callback: (urls: string[]) => void) {

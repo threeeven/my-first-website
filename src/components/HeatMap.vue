@@ -44,6 +44,7 @@
                 'selected': gridData[row-1]?.[col-1]?.dateStr === selectedDateStr
               }"
               :style="gridData[row-1]?.[col-1] ? { backgroundColor: getColor(gridData[row-1]?.[col-1]?.count ?? 0) } : {}"
+              :title="gridData[row-1]?.[col-1] ? `${gridData[row-1]?.[col-1]?.dateStr ?? ''} ${gridData[row-1]?.[col-1]?.count ?? 0}篇日记` : ''"
               @click="gridData[row-1]?.[col-1] && goToDate(gridData[row-1]?.[col-1]?.dateStr ?? '')"
             >
               <span class="cell-day" v-if="gridData[row-1]?.[col-1]">
