@@ -14,8 +14,8 @@
     />
 
     <!-- 日期范围选择器 -->
-    <Datepicker
-      v-model="dateRange"
+    <VueDatePicker
+      v-model!="dateRange"
       range
       :clearable="true"
       placeholder="选择日期范围"
@@ -38,7 +38,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import { useDiaryStore } from '@/stores/diaryStore';
-import Datepicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
 import '@vuepic/vue-datepicker/style.css';
 
 const store = useDiaryStore();
