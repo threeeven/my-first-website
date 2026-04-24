@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
+    "@vuepic/vue-datepicker": "^12.1.0",
     "marked": "^18.0.1",
     "md-editor-v3": "^6.4.2",
     "pinia": "^3.0.4",
