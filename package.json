@@ -13,10 +13,12 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
     "@vuepic/vue-datepicker": "^12.1.0",
+    "date-fns": "^4.1.0",
     "marked": "^18.0.1",
     "md-editor-v3": "^6.4.2",
     "pinia": "^3.0.4",
-    "vue": "^3.5.31"
+    "vue": "^3.5.31",
+    "vue3-datepicker": "^0.4.0"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",

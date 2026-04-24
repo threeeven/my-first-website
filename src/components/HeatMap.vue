@@ -2,7 +2,8 @@
   <div class="heatmap-container">
     <h3>📅 日记热力图（最近120天）</h3>
     <div class="heatmap-wrapper">
-      <div class="weekday-labels">
+      <!-- 星期标签列 -->
+      <div class="weekday-labels" :style="{ gridTemplateRows: `repeat(7, 1fr)` }">
         <div class="weekday-cell">日</div>
         <div class="weekday-cell">一</div>
         <div class="weekday-cell">二</div>
@@ -11,7 +12,9 @@
         <div class="weekday-cell">五</div>
         <div class="weekday-cell">六</div>
       </div>
+
       <div class="heatmap-grid">
+        <!-- 月份标签行 -->
         <div class="month-labels" :style="{ gridTemplateColumns: `repeat(${totalWeeks}, 1fr)` }">
           <div
             v-for="(month, idx) in monthLabels"
@@ -22,22 +25,32 @@
             {{ month.name }}
           </div>
         </div>
+
+        <!-- 热力网格 -->
         <div
           class="heatmap-cells"
-          :style="{ gridTemplateRows: `repeat(7, 1fr)`, gridTemplateColumns: `repeat(${totalWeeks}, 1fr)` }"
+          :style="{
+            gridTemplateRows: `repeat(7, 1fr)`,
+            gridTemplateColumns: `repeat(${totalWeeks}, 1fr)`
+          }"
         >
-          <div
-            v-for="(cell, idx) in cells"
-            :key="idx"
-            class="heatmap-cell"
-            :data-date="cell.dateStr"
-            :data-count="cell.count"
-            :style="{ backgroundColor: getColor(cell.count) }"
-            :title="`${cell.dateStr} 有 ${cell.count} 篇日记`"
-            @click="goToDate(cell.dateStr)"
-          >
-            <span class="cell-day">{{ cell.day }}</span>
-          </div>
+          <template v-for="row in 7" :key="row">
+            <div
+              v-for="col in totalWeeks"
+              :key="`${row}-${col}`"
+              class="heatmap-cell"
+              :class="{ 
+                'empty-cell': !gridData[row-1][col-1],
+                'selected': gridData[row-1][col-1] && gridData[row-1][col-1].dateStr === selectedDateStr
+              }"
+              :style="gridData[row-1][col-1] ? { backgroundColor: getColor(gridData[row-1][col-1].count) } : {}"
+              @click="gridData[row-1][col-1] && goToDate(gridData[row-1][col-1].dateStr)"
+            >
+              <span class="cell-day" v-if="gridData[row-1][col-1]">
+                {{ gridData[row-1][col-1].day }}
+              </span>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -45,18 +58,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import type { Diary } from '@/types/diary';
+import { useDiaryStore } from '@/stores/diaryStore';
 
-const props = defineProps<{
-  diaries: Diary[];
-}>();
+const store = useDiaryStore();
 
 const emit = defineEmits<{
-  (e: 'dateSelected', dateStr: string): void;
+  (e: 'dateSelected', dateStr: string | null): void;
 }>();
 
-// 辅助工具函数
 function formatDateStr(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -64,20 +75,16 @@ function formatDateStr(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-const totalDays = 120;          // 期望的最小网格天数（可调整）
+const totalDays = 120;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// 候选起始：今天往前推 (totalDays-1) 天
 let start = new Date(today);
 start.setDate(today.getDate() - (totalDays - 1));
-
-// 将起始调整为最近的周日（向前调）
 while (start.getDay() !== 0) {
   start.setDate(start.getDate() - 1);
 }
 
-// 生成日期列表：从 start 到 today（包含今天）
 const dateList: Date[] = [];
 const cursor = new Date(start);
 while (cursor <= today) {
@@ -85,61 +92,63 @@ while (cursor <= today) {
   cursor.setDate(cursor.getDate() + 1);
 }
 
-// 总周数（仅用于展示，不强制整周）
 const totalWeeks = Math.ceil(dateList.length / 7);
 
-// 构建单元格
-const cells = computed(() => {
-  const cellsArray: Array<{
-    dateStr: string;
-    day: number;
-    count: number;
-  }> = [];
-
-  // 统计日记数量按日期聚合
-  const countMap = new Map<string, number>();
-  for (const diary of props.diaries) {
+const countMap = computed(() => {
+  const map = new Map<string, number>();
+  for (const diary of store.diaries) {
     const localDate = new Date(diary.created_at);
     localDate.setHours(0, 0, 0, 0);
     const dateKey = formatDateStr(localDate);
-    countMap.set(dateKey, (countMap.get(dateKey) || 0) + 1);
+    map.set(dateKey, (map.get(dateKey) || 0) + 1);
   }
-
-  for (const d of dateList) {
-    const dateStr = formatDateStr(d);
-    const count = countMap.get(dateStr) || 0;
-    cellsArray.push({
-      dateStr,
-      day: d.getDate(),
-      count,
-    });
-  }
-  return cellsArray;
+  return map;
 });
 
-// 计算月份标签（基于每个星期的起始日期）
+const gridData = computed(() => {
+  const grid: Array<Array<{ dateStr: string; day: number; count: number } | null>> = Array(7)
+    .fill(null)
+    .map(() => Array(totalWeeks).fill(null));
+
+  for (let i = 0; i < dateList.length; i++) {
+    const d = dateList[i]!;
+    const dateStr = formatDateStr(d);
+    const day = d.getDate();
+    const count = countMap.value.get(dateStr) || 0;
+
+    const col = Math.floor(i / 7);
+    const row = i % 7;
+    if (col < totalWeeks) {
+      grid[row][col] = { dateStr, day, count };
+    }
+  }
+  return grid;
+});
+
 const monthLabels = computed(() => {
+  const columnDates: Date[] = [];
+  for (let col = 0; col < totalWeeks; col++) {
+    const date = new Date(start);
+    date.setDate(start.getDate() + col * 7);
+    columnDates.push(date);
+  }
+
   const labels: { name: string; span: number }[] = [];
-  let currentWeek = 0;
-  while (currentWeek < totalWeeks) {
-    // 当前周的第一天日期
-    const weekStart = new Date(start);
-    weekStart.setDate(start.getDate() + currentWeek * 7);
-    const month = weekStart.getMonth();
-    const monthName = `${weekStart.getFullYear()}年${month + 1}月`;
+  let i = 0;
+  while (i < columnDates.length) {
+    const currentDate = columnDates[i];
+    const currentMonth = currentDate.getMonth();
+    const monthName = `${currentMonth + 1}月`;
     let span = 1;
-    // 看后续几周属于同一个月
-    for (let nextWeek = currentWeek + 1; nextWeek < totalWeeks; nextWeek++) {
-      const nextWeekStart = new Date(start);
-      nextWeekStart.setDate(start.getDate() + nextWeek * 7);
-      if (nextWeekStart.getMonth() === month) {
+    for (let j = i + 1; j < columnDates.length; j++) {
+      if (columnDates[j].getMonth() === currentMonth) {
         span++;
       } else {
         break;
       }
     }
     labels.push({ name: monthName, span });
-    currentWeek += span;
+    i += span;
   }
   return labels;
 });
@@ -152,9 +161,25 @@ function getColor(count: number): string {
   return '#196127';
 }
 
+const selectedDateStr = ref<string | null>(null);
+
 function goToDate(dateStr: string) {
-  emit('dateSelected', dateStr);
+  if (selectedDateStr.value === dateStr) {
+    // 再次点击同一日期：取消高亮，通知清除筛选
+    selectedDateStr.value = null;
+    emit('dateSelected', null);
+  } else {
+    selectedDateStr.value = dateStr;
+    emit('dateSelected', dateStr);
+  }
 }
+
+// 暴露清除高亮的方法，供父组件在重置筛选时调用
+function clearSelection() {
+  selectedDateStr.value = null;
+}
+
+defineExpose({ clearSelection });
 </script>
 
 <style scoped>
@@ -173,15 +198,20 @@ function goToDate(dateStr: string) {
 .weekday-labels {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  width: 2rem;
+  justify-content: space-around;
+  width: 2.2rem;       /* 星期标签列固定宽度，不易过大 */
+  flex-shrink: 0;
+  gap: 0.2rem;
 }
 .weekday-cell {
-  height: 2rem;
-  line-height: 2rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.75rem;
   color: var(--text-secondary);
+  height: auto;
+  flex: 1;
+  background: transparent;
 }
 .heatmap-grid {
   flex: 1;
@@ -190,33 +220,45 @@ function goToDate(dateStr: string) {
 .month-labels {
   display: grid;
   margin-bottom: 0.25rem;
+  gap: 0.2rem;
+  grid-template-columns: repeat(v-bind(totalWeeks), minmax(0, 1fr));
 }
 .month-label {
   font-size: 0.7rem;
   color: var(--text-secondary);
   text-align: center;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .heatmap-cells {
   display: grid;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(v-bind(totalWeeks), minmax(0, 1fr));
 }
 .heatmap-cell {
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 1 / 1;   /* 保持正方形 */
   width: 100%;
   border-radius: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.1s;
+  transition: transform 0.1s, filter 0.1s;
+  background-color: #ebedf0;
 }
-.heatmap-cell:hover {
+.heatmap-cell.empty-cell {
+  background-color: transparent !important;
+  cursor: default;
+  pointer-events: none;
+}
+.heatmap-cell:not(.empty-cell):hover {
   transform: scale(1.05);
   filter: brightness(0.95);
 }
 .cell-day {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: #1f2937;
   font-weight: 500;
   text-shadow: 0 0 1px white;
@@ -225,6 +267,35 @@ function goToDate(dateStr: string) {
   .cell-day {
     color: #f1f5f9;
     text-shadow: none;
+  }
+  .heatmap-cell.empty-cell {
+    background-color: transparent;
+  }
+}
+
+.heatmap-cell.selected {
+  outline: 2px solid #3b82f6;     /* 蓝色外轮廓 */
+  outline-offset: 2px;            /* 略微外扩，不占用内部空间 */
+  position: relative;
+  z-index: 1;                     /* 确保轮廓在其他内容之上 */
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .heatmap-cell.selected {
+    outline-color: #60a5fa;
+  }
+}.heatmap-cell.selected {
+  outline: 2px solid #3b82f6;     /* 蓝色外轮廓 */
+  outline-offset: 2px;            /* 略微外扩，不占用内部空间 */
+  position: relative;
+  z-index: 1;                     /* 确保轮廓在其他内容之上 */
+}
+
+/* 深色模式适配 */
+@media (prefers-color-scheme: dark) {
+  .heatmap-cell.selected {
+    outline-color: #60a5fa;
   }
 }
 </style>

@@ -2,8 +2,12 @@
   <div class="container">
     <DiaryEditor ref="editorRef" @saved="refreshList" />
     <div class="list-panel">
-      <DiaryList ref="diaryListRef" @edit="handleEditDiary" />
-      <HeatMap :diaries="store.diaries" @dateSelected="handleDateSelected" />
+      <DiaryList 
+        ref="diaryListRef" 
+        @edit="handleEditDiary"
+        @resetDateSelection="handleResetDateSelection"
+      />
+      <HeatMap ref="heatMapRef" :diaries="store.diaries" @dateSelected="handleDateSelected" />
     </div>
   </div>
 </template>
@@ -19,28 +23,28 @@ import { useDiaryStore } from './stores/diaryStore';
 const store = useDiaryStore();
 const editorRef = ref<InstanceType<typeof DiaryEditor> | null>(null);
 const diaryListRef = ref<InstanceType<typeof DiaryList> | null>(null);
+const heatMapRef = ref<InstanceType<typeof HeatMap> | null>(null);
 
 function handleEditDiary(diary: Diary) {
   editorRef.value?.setEditMode(diary);
 }
 
+// 热力图点击（或取消）日期
+function handleDateSelected(dateStr: string | null) {
+  if (diaryListRef.value) {
+    diaryListRef.value.filterByDate(dateStr);
+  }
+}
 
-// 处理热力图日期点击：加载当天的日记
-async function handleDateSelected(dateStr: string) {
-  // dateStr 格式 YYYY-MM-DD
-  // 构造当天开始和结束时间（本地日期转换为 UTC）
-  const startDate = new Date(dateStr);
-  startDate.setUTCHours(0, 0, 0, 0);
-  const endDate = new Date(dateStr);
-  endDate.setUTCHours(23, 59, 59, 999);
-  
-  await store.loadDiaries({
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-  });
+// 当 DiaryList 检测到日期条件被清除时，同步清除热力图高亮
+function handleResetDateSelection() {
+  heatMapRef.value?.clearSelection();
 }
 
 function refreshList() {
   store.loadDiaries();
+  if (diaryListRef.value) {
+    diaryListRef.value.filterByDate(null); // 清空日期筛选
+  }
 }
 </script>

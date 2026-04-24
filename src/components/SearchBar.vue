@@ -13,16 +13,24 @@
       @keyup.enter="applyFilters"
     />
 
-    <!-- 日期范围选择器 -->
-    <VueDatePicker
-      v-model!="dateRange"
-      range
-      :clearable="true"
-      placeholder="选择日期范围"
-      :format="dateFormat"
-      class="date-range-picker"
-      @cleared="clearDateRange"
-    />
+    <!-- 日期范围选择器 (使用两个独立 Datepicker) -->
+    <div class="date-range-wrapper">
+      <Datepicker
+        v-model="startDate"
+        :clearable="true"
+        :inputFormat="dateFormatPattern"
+        placeholder="开始日期"
+        @cleared="handleStartCleared"
+      />
+      <span class="date-separator">至</span>
+      <Datepicker
+        v-model="endDate"
+        :clearable="true"
+        :inputFormat="dateFormatPattern"
+        placeholder="结束日期"
+        @cleared="handleEndCleared"
+      />
+    </div>
 
     <select v-model="localFilters.isPublic">
       <option value="">全部</option>
@@ -37,105 +45,127 @@
 
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
-import { useDiaryStore } from '@/stores/diaryStore';
-import { VueDatePicker } from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/style.css';
+import Datepicker from 'vue3-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css'; // 保留原有样式（若需要可移除，此处不影响）
 
-const store = useDiaryStore();
+// 筛选条件类型
+interface FilterOptions {
+  search?: string;
+  tag?: string;
+  isPublic?: boolean;
+  startDate?: Date;
+  endDate?: Date;
+}
 
-// 本地筛选条件
+const emit = defineEmits<{
+  (e: 'filter-change', filters: FilterOptions): void;
+}>();
+
+// 本地筛选条件（文本、下拉框）
 const localFilters = reactive({
   search: '',
   tag: '',
   isPublic: '' as '' | 'true' | 'false',
 });
 
-// 日期范围绑定的数组 [startDate, endDate]
-const dateRange = ref<[Date | null, Date | null]>([null, null]);
+// 日期范围：两个单独的 ref
+const startDate = ref<Date | null>(null);
+const endDate = ref<Date | null>(null);
 
-// 日期格式化函数
-const dateFormat = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+// 日期显示格式 (date-fns 模式)
+const dateFormatPattern = 'yyyy-MM-dd';
 
+// 应用筛选：组装条件并发射事件
 const applyFilters = () => {
-  let startDate: string | undefined;
-  let endDate: string | undefined;
+  const filters: FilterOptions = {};
 
-  if (dateRange.value[0]) {
-    // 开始日期：当天 00:00:00 UTC
-    const start = new Date(dateRange.value[0]);
-    start.setUTCHours(0, 0, 0, 0);
-    startDate = start.toISOString();
-  }
-  if (dateRange.value[1]) {
-    // 结束日期：当天 23:59:59 UTC
-    const end = new Date(dateRange.value[1]);
-    end.setUTCHours(23, 59, 59, 999);
-    endDate = end.toISOString();
-  }
+  if (localFilters.search.trim()) filters.search = localFilters.search.trim();
+  if (localFilters.tag.trim()) filters.tag = localFilters.tag.trim();
+  if (localFilters.isPublic === 'true') filters.isPublic = true;
+  if (localFilters.isPublic === 'false') filters.isPublic = false;
+  if (startDate.value) filters.startDate = startDate.value;
+  if (endDate.value) filters.endDate = endDate.value;
 
-  store.loadDiaries({
-    search: localFilters.search || undefined,
-    tag: localFilters.tag || undefined,
-    startDate,
-    endDate,
-    isPublic: localFilters.isPublic === 'true' ? true : (localFilters.isPublic === 'false' ? false : undefined),
-  });
+  emit('filter-change', filters);
 };
 
+// 新增：仅清除日期范围，保留其他筛选条件
+function clearDateRangeOnly() {
+  startDate.value = null;
+  endDate.value = null;
+  applyFilters();  // 触发筛选更新，此时 filter-change 事件中不包含日期字段
+}
+
+
+// 重置所有筛选
 const resetFilters = () => {
   localFilters.search = '';
   localFilters.tag = '';
   localFilters.isPublic = '';
-  dateRange.value = [null, null];
-  store.resetFilters();
+  startDate.value = null;
+  endDate.value = null;
+  emit('filter-change', {});
 };
 
-// 当日期选择器的清空按钮被点击时触发
-const clearDateRange = () => {
-  dateRange.value = [null, null];
+// 清除开始日期时的处理（若开始日期被清除，结束日期也应清除？可根据业务调整）
+const handleStartCleared = () => {
+  startDate.value = null;
   applyFilters();
 };
 
-// 监听日期范围变化，自动搜索（可选，如果你希望选择后立即搜索）
-watch(dateRange, () => {
+// 清除结束日期
+const handleEndCleared = () => {
+  endDate.value = null;
+  applyFilters();
+};
+
+// 监听开始或结束日期的变化，自动搜索
+watch([startDate, endDate], () => {
   applyFilters();
 });
 
-// 监听回车事件已经在 input 上处理，无需额外
-
-// 暴露给父组件的方法
+// 暴露给父组件的方法（与之前保持一致）
 function setDateRange(start: string, end: string) {
-  // 将字符串日期转换为 Date 对象
-  dateRange.value = [new Date(start), new Date(end)];
+  startDate.value = new Date(start);
+  endDate.value = new Date(end);
 }
-
 function triggerSearch() {
   applyFilters();
 }
 
-// 暴露方法
 defineExpose({
   setDateRange,
   triggerSearch,
+  clearDateRangeOnly
 });
-
 </script>
 
 <style scoped>
-/* 日期选择器宽度自适应 */
-.date-range-picker {
-  flex: 1 0 auto;
-  min-width: 200px;
+/* 原有的样式保持不变，仅微调日期范围包装器 */
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
-/* 确保输入框和选择器在移动端适配 */
+.date-range-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 0 auto;
+  min-width: 240px;
+}
+
+.date-separator {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* 移动端适配 */
 @media (max-width: 640px) {
-  .date-range-picker {
+  .date-range-wrapper {
     width: 100%;
   }
 }
