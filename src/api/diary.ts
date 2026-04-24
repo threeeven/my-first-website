@@ -56,3 +56,14 @@ export async function uploadImage(file: File): Promise<string> {
   const data = await res.json();
   return data.url;
 }
+
+export async function fetchDiaryVersions(diaryId: string): Promise<Array<{
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+}>> {
+  const res = await fetch(`/api/diaries/versions?id=${diaryId}`);
+  if (!res.ok) throw new Error('Fetch versions failed');
+  return res.json();
+}

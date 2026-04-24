@@ -1,5 +1,5 @@
 // functions/api/diaries.ts
-export const onRequest: PagesFunction = async (context) => {
+export const onRequest = async (context) => {
   const { request, env } = context;
   const url = new URL(request.url);
   const method = request.method;
@@ -72,18 +72,45 @@ export const onRequest: PagesFunction = async (context) => {
     }
 
     // ---------- PUT /api/diaries?id=xxx ----------
+    // PUT /api/diaries?id=xxx 编辑
     if (method === 'PUT' && url.pathname === '/api/diaries') {
       const id = url.searchParams.get('id');
       if (!id) {
         return Response.json({ error: 'Missing id' }, { status: 400, headers: corsHeaders });
       }
+
+      // 1. 获取当前日记内容（旧版本）
+      const { data: current, error: fetchError } = await supabase
+        .from('diaries')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // 2. 插入旧版本到 diary_versions 表
+      const versionId = `${Date.now()}-${id}`;
+      const versionData = {
+        id: versionId,
+        diary_id: id,
+        title: current.title,
+        content: current.content,
+        tags: current.tags,
+        is_public: current.is_public,
+        image_url: current.image_url,
+        created_at: new Date().toISOString(),
+      };
+      const { error: versionError } = await supabase.from('diary_versions').insert(versionData);
+      if (versionError) console.error('Version insert error:', versionError); // 非致命错误，但记录日志
+
+      // 3. 更新当前日记
       const updates = await request.json();
       const updateData = {
         ...updates,
         updated_at: new Date().toISOString(),
       };
-      const { error } = await supabase.from('diaries').update(updateData).eq('id', id);
-      if (error) throw error;
+      const { error: updateError } = await supabase.from('diaries').update(updateData).eq('id', id);
+      if (updateError) throw updateError;
+
       return Response.json({ success: true }, { headers: corsHeaders });
     }
 
