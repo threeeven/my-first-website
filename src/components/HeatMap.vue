@@ -64,26 +64,29 @@ function formatDateStr(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-// 生成日期范围和周数
+const totalDays = 120;          // 期望的最小网格天数（可调整）
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-// 开始日期：今天往前推119天，然后调整到最近的周日
+// 候选起始：今天往前推 (totalDays-1) 天
 let start = new Date(today);
-start.setDate(today.getDate() - 119);
+start.setDate(today.getDate() - (totalDays - 1));
+
+// 将起始调整为最近的周日（向前调）
 while (start.getDay() !== 0) {
   start.setDate(start.getDate() - 1);
 }
-const startDate = start; // 固定起始日期
 
-// 生成日期列表（长度 >= 120，并且是7的倍数，方便网格）
+// 生成日期列表：从 start 到 today（包含今天）
 const dateList: Date[] = [];
-const cursor = new Date(startDate);
-while (dateList.length < 120) {
+const cursor = new Date(start);
+while (cursor <= today) {
   dateList.push(new Date(cursor));
   cursor.setDate(cursor.getDate() + 1);
 }
-const totalWeeks = Math.ceil(dateList.length / 7); // 总列数
+
+// 总周数（仅用于展示，不强制整周）
+const totalWeeks = Math.ceil(dateList.length / 7);
 
 // 构建单元格
 const cells = computed(() => {
@@ -120,15 +123,15 @@ const monthLabels = computed(() => {
   let currentWeek = 0;
   while (currentWeek < totalWeeks) {
     // 当前周的第一天日期
-    const weekStart = new Date(startDate);
-    weekStart.setDate(startDate.getDate() + currentWeek * 7);
+    const weekStart = new Date(start);
+    weekStart.setDate(start.getDate() + currentWeek * 7);
     const month = weekStart.getMonth();
     const monthName = `${weekStart.getFullYear()}年${month + 1}月`;
     let span = 1;
     // 看后续几周属于同一个月
     for (let nextWeek = currentWeek + 1; nextWeek < totalWeeks; nextWeek++) {
-      const nextWeekStart = new Date(startDate);
-      nextWeekStart.setDate(startDate.getDate() + nextWeek * 7);
+      const nextWeekStart = new Date(start);
+      nextWeekStart.setDate(start.getDate() + nextWeek * 7);
       if (nextWeekStart.getMonth() === month) {
         span++;
       } else {
