@@ -70,7 +70,8 @@
       </div>
     </div>
   </div>
-    <!-- 版本弹窗 -->
+
+  <!-- 版本弹窗 -->
   <div v-if="versionsModal.visible" class="modal-overlay" @click="closeVersionsModal">
     <div class="modal-content" @click.stop>
       <h3>编辑记录</h3>
@@ -79,7 +80,14 @@
         <div v-for="ver in versionsModal.versions" :key="ver.id" class="version-item">
           <div class="version-time">{{ formatDate(ver.created_at) }}</div>
           <div class="version-title">{{ ver.title }}</div>
-          <div class="version-preview">{{ ver.content}}</div>
+          <!-- 使用 MdPreview 渲染 Markdown 内容，限制高度并允许滚动 -->
+          <div class="version-content">
+            <MdPreview
+              :modelValue="ver.content"
+              previewTheme="github"
+              codeTheme="github"
+            />
+          </div>
         </div>
         <div v-if="versionsModal.versions.length === 0">暂无编辑记录</div>
       </div>
@@ -402,9 +410,19 @@ onUnmounted(() => {
   font-weight: 600;
   margin: 4px 0;
 }
-.version-preview {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+.version-content {
+  max-height: 200px;
+  overflow-y: auto;
+  /* background: var(--bg-primary); */
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.version-content :deep(img) {
+  max-width: 100%;
+  border-radius: 4px;
 }
 .delete-menu-item {
   color: var(--danger) !important;
