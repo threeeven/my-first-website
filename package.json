@@ -12,8 +12,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
-    "@vuepic/vue-datepicker": "^12.1.0",
-    "date-fns": "^4.1.0",
     "marked": "^18.0.1",
     "md-editor-v3": "^6.4.2",
     "pinia": "^3.0.4",
@@ -28,7 +26,6 @@
     "npm-run-all2": "^8.0.4",
     "typescript": "~6.0.0",
     "vite": "^8.0.3",
-    "vite-plugin-vue-devtools": "^8.1.1",
     "vue-tsc": "^3.2.6"
   },
   "engines": {

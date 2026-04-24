@@ -40,14 +40,14 @@
               :key="`${row}-${col}`"
               class="heatmap-cell"
               :class="{ 
-                'empty-cell': !gridData[row-1][col-1],
-                'selected': gridData[row-1][col-1] && gridData[row-1][col-1].dateStr === selectedDateStr
+                'empty-cell': !gridData[row-1]?.[col-1],
+                'selected': gridData[row-1]?.[col-1]?.dateStr === selectedDateStr
               }"
-              :style="gridData[row-1][col-1] ? { backgroundColor: getColor(gridData[row-1][col-1].count) } : {}"
-              @click="gridData[row-1][col-1] && goToDate(gridData[row-1][col-1].dateStr)"
+              :style="gridData[row-1]?.[col-1] ? { backgroundColor: getColor(gridData[row-1][col-1].count) } : {}"
+              @click="gridData[row-1]?.[col-1] && goToDate(gridData[row-1][col-1].dateStr)"
             >
-              <span class="cell-day" v-if="gridData[row-1][col-1]">
-                {{ gridData[row-1][col-1].day }}
+              <span class="cell-day" v-if="gridData[row-1]?.[col-1]">
+                {{ gridData[row-1]?.[col-1]?.day }}
               </span>
             </div>
           </template>
@@ -119,7 +119,7 @@ const gridData = computed(() => {
     const col = Math.floor(i / 7);
     const row = i % 7;
     if (col < totalWeeks) {
-      grid[row][col] = { dateStr, day, count };
+      grid[row]![col] = { dateStr, day, count };
     }
   }
   return grid;
@@ -137,11 +137,11 @@ const monthLabels = computed(() => {
   let i = 0;
   while (i < columnDates.length) {
     const currentDate = columnDates[i];
-    const currentMonth = currentDate.getMonth();
+    const currentMonth = currentDate!.getMonth();
     const monthName = `${currentMonth + 1}月`;
     let span = 1;
     for (let j = i + 1; j < columnDates.length; j++) {
-      if (columnDates[j].getMonth() === currentMonth) {
+      if (columnDates[j]?.getMonth() === currentMonth) {
         span++;
       } else {
         break;

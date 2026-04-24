@@ -46,7 +46,6 @@
 <script setup lang="ts">
 import { reactive, ref, watch } from 'vue';
 import Datepicker from 'vue3-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css'; // 保留原有样式（若需要可移除，此处不影响）
 
 // 筛选条件类型
 interface FilterOptions {
@@ -69,8 +68,8 @@ const localFilters = reactive({
 });
 
 // 日期范围：两个单独的 ref
-const startDate = ref<Date | null>(null);
-const endDate = ref<Date | null>(null);
+const startDate = ref<Date | undefined>(undefined);
+const endDate = ref<Date | undefined>(undefined);
 
 // 日期显示格式 (date-fns 模式)
 const dateFormatPattern = 'yyyy-MM-dd';
@@ -91,8 +90,8 @@ const applyFilters = () => {
 
 // 新增：仅清除日期范围，保留其他筛选条件
 function clearDateRangeOnly() {
-  startDate.value = null;
-  endDate.value = null;
+  startDate.value = undefined;
+  endDate.value = undefined;
   applyFilters();  // 触发筛选更新，此时 filter-change 事件中不包含日期字段
 }
 
@@ -102,20 +101,20 @@ const resetFilters = () => {
   localFilters.search = '';
   localFilters.tag = '';
   localFilters.isPublic = '';
-  startDate.value = null;
-  endDate.value = null;
+  startDate.value = undefined;
+  endDate.value = undefined;
   emit('filter-change', {});
 };
 
 // 清除开始日期时的处理（若开始日期被清除，结束日期也应清除？可根据业务调整）
 const handleStartCleared = () => {
-  startDate.value = null;
+  startDate.value = undefined;
   applyFilters();
 };
 
 // 清除结束日期
 const handleEndCleared = () => {
-  endDate.value = null;
+  endDate.value = undefined;
   applyFilters();
 };
 
