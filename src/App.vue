@@ -11,15 +11,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import DiaryEditor from './components/DiaryEditor.vue';
-import DiaryList from './components/DiaryList.vue';
-import HeatMap from './components/HeatMap.vue'
+import HeatMap from './components/HeatMap.vue';
 import type { Diary } from './types/diary';
 import { useDiaryStore } from './stores/diaryStore';
 
 const store = useDiaryStore();
 const editorRef = ref<InstanceType<typeof DiaryEditor> | null>(null);
-const diaryListRef = ref<InstanceType<typeof DiaryList> | null>(null);
-
 
 function handleEditDiary(diary: Diary) {
   editorRef.value?.setEditMode(diary);
